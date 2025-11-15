@@ -2,48 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login Kasir Admin</title>
-    <style>
-        body {
-            font-family: Arial;
-            background: #f7f7f7;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .login-box {
-            background: white;
-            padding: 2em;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-        input, button {
-            display: block;
-            width: 100%;
-            margin-bottom: 1em;
-            padding: 0.7em;
-            font-size: 1em;
-        }
-        button {
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Admin Kasir</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
-<body>
-<div class="login-box">
-    <h2>Login Admin Kasir</h2>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Login</button>
-    </form>
-    {% if form.errors %}
-        <p style="color:red;">Username atau password salah.</p>
-    {% endif %}
-</div>
+<body style="background: linear-gradient(45deg, #bcdcf8ff, #ffffff); background-size: 300% 300%; animation: moveBg 20s ease infinite;">
+    <div class="d-flex justify-content-center align-items-center vh-100">   
+        <div class="card text-center shadow rounded-3 p-4" style="width: 25rem;">
+            <div class="card-body">
+                <form method="post" {% load widget_tweaks %}>
+                    <h5 class="card-title fw-bold">Admin Kondang Kasir</h5>
+                    <p class="card-text text-secondary fs-6">
+                        <small>Masuk menggunakan akun admin anda</small>
+                    </p>
+                
+                    {% csrf_token %}
+
+                    <div class="mb-3 text-start">
+                        <label class="form-label fw-semibold"><small>Username</small></label>
+                        {% render_field form.username class="form-control input-placeholder input-big" placeholder="Masukkan username" %}
+                    </div>
+
+                   <div class="text-start">
+                        <label class="form-label fw-semibold"><small>Password</small></label>
+                        <div class="password-wrapper">
+                            {% render_field form.password class="form-control input-placeholder input-big" placeholder="Masukkan password" id="passwordInput" %}
+                            <button type="button" id="togglePassword" class="toggle-password-btn">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-check text-start my-3 mx-2">
+                        <input class="form-check-input" type="checkbox" id="checkDefault">
+                        <label class="form-check-label text-secondary" for="checkDefault">
+                            <small>
+                            Ingatkan saya
+                            </small>
+                        </label>
+                    </div>
+
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary" style="width:100%;">Masuk</button>
+
+                        <p class="card-text text-secondary fs-6 mt-3">
+                            <small>Belum punya akun?
+                                <a href="#">Buat disini</a>
+                            </small>
+                        </p>
+                    </div>
+
+                    {% if form.errors %}
+                        <div class="alert alert-danger mt-3">
+                            Username atau password salah.
+                        </div>
+                    {% endif %}
+
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'js/app.js' %}"></script>
 </body>
 </html>
