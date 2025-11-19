@@ -57,7 +57,30 @@ def laporan_penjualan(request):
         'penjualan_barang': penjualan_barang,
         'detail_list': detail_list,
     })
-    
+def transaksi_delete(request, id):
+    transaksi = get_object_or_404(Transaksi, id=id)
+    transaksi.delete()
+    return redirect("riwayat")
+
+def transaksi_edit(request, id):
+    transaksi = get_object_or_404(Transaksi, id=id)
+    detail_items = DetailTransaksi.objects.filter(transaksi=transaksi)
+
+    if request.method == "POST":
+        total_harga_baru = request.POST.get("total_harga")
+
+        if total_harga_baru:
+            transaksi.total_harga = total_harga_baru
+            transaksi.save()
+
+        return redirect("riwayat")
+
+    return render(request, "transaksi/edit.html", {
+        "transaksi": transaksi,
+        "detail_items": detail_items
+    })
+
+
 def produk_list(request):
     produk_list = Barang.objects.all()
     return render(request, "produk/list.html", {"produk_list": produk_list})

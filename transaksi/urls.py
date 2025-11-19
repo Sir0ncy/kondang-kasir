@@ -16,4 +16,8 @@ urlpatterns = [
     path('produk/edit/<int:id>', views.produk_edit, name='produk_edit'),
     path('produk/hapus/<int:id>', views.produk_delete, name='produk_delete'),
 
+    # Transaksi CRUD
+    path('transaksi/edit/<int:id>/', views.transaksi_edit, name='transaksi_edit'),
+    path('transaksi/hapus/<int:id>/', views.transaksi_delete, name='transaksi_delete'),
+
 ]
