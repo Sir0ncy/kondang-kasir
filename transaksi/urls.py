@@ -5,7 +5,10 @@ urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
     path('', views.dashboard, name='dashboard'),
     path('kasir/', views.kasir, name='kasir'),
-
+    path('riwayat/', views.riwayat, name='riwayat'),
+    path('laporan/', views.laporan_penjualan, name='laporan'),
+    
+    
     # Produk/Barang CRUD
     path('produk/', views.produk_list, name='produk_list'),
     path('produk/tambah/', views.produk_create, name='produk_create'),

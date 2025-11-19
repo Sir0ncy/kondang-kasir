@@ -1,7 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.db.models import Sum, F
 from .models import Barang
 from .forms import BarangForm
+from .models import Barang, Transaksi
+from .models import Transaksi, DetailTransaksi
 
 @login_required
 def dashboard(request):
@@ -14,6 +17,44 @@ def kasir(request):
         'products': products
     })
 
+def riwayat(request):
+    transaksi_list = Transaksi.objects.all().order_by('-tanggal_transaksi')
+    return render(request, 'riwayat.html', {
+        'transaksi_list': transaksi_list
+    })
+    
+def laporan_penjualan(request):
+
+    total_transaksi = Transaksi.objects.count()
+
+    total_item = DetailTransaksi.objects.aggregate(
+        total=Sum('qty')
+    )['total'] or 0
+
+    total_pendapatan = Transaksi.objects.aggregate(
+        total=Sum('total_harga')
+    )['total'] or 0
+
+    penjualan_barang = (
+        DetailTransaksi.objects
+        .values('barang__nama_barang')
+        .annotate(
+            total_qty=Sum('qty'),
+            total_pendapatan=Sum('subtotal')
+        )
+        .order_by('-total_qty')
+    )
+
+    detail_list = DetailTransaksi.objects.select_related("transaksi", "barang")
+
+    return render(request, "laporan.html", {
+        'total_transaksi': total_transaksi,
+        'total_item': total_item,
+        'total_pendapatan': total_pendapatan,
+        'penjualan_barang': penjualan_barang,
+        'detail_list': detail_list,
+    })
+    
 def produk_list(request):
     produk_list = Barang.objects.all()
     return render(request, "produk/list.html", {"produk_list": produk_list})
