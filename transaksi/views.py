@@ -5,6 +5,9 @@ from .models import Barang
 from .forms import BarangForm
 from .models import Barang, Transaksi
 from .models import Transaksi, DetailTransaksi
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 @login_required
 def dashboard(request):
@@ -86,3 +89,61 @@ def produk_delete(request, id):
     barang = get_object_or_404(Barang, id=id)
     barang.delete()
     return redirect("produk_list")
+
+@csrf_exempt
+@login_required
+def checkout(request):
+    if request.method != "POST":
+        return JsonResponse({"status": "error", "message": "Invalid request"}, status=400)
+
+    data = json.loads(request.body)
+    cart = data.get("cart", {})
+
+    if not cart:
+        return JsonResponse({"status": "error", "message": "Keranjang kosong"}, status=400)
+
+    # Create transaksi
+    transaksi = Transaksi.objects.create(total_harga=0)
+
+    total_harga_final = 0
+
+    # Process each item in cart
+    for pid, item in cart.items():
+        barang = Barang.objects.get(id=pid)
+        qty = float(item["qty"])
+
+        # Load bulk discount
+        bulk_size = barang.bulk_size or 0
+        bulk_discount = barang.bulk_discount_rate or 0
+
+        harga_normal = float(barang.harga_per_unit)
+
+        # Bulk calculation
+        if bulk_size > 0 and qty >= bulk_size:
+            bulk_groups = int(qty // bulk_size)
+            remainder = qty % bulk_size
+
+            bulk_price = harga_normal * bulk_size * (1 - bulk_discount / 100)
+            subtotal = (bulk_groups * bulk_price) + (remainder * harga_normal)
+
+        else:
+            subtotal = qty * harga_normal
+
+        total_harga_final += subtotal
+
+        DetailTransaksi.objects.create(
+            transaksi=transaksi,
+            barang=barang,
+            qty=qty,
+            harga_satuan=barang.harga_per_unit,
+            subtotal=subtotal
+        )
+
+    transaksi.total_harga = total_harga_final
+    transaksi.save()
+
+    return JsonResponse({
+        "status": "success",
+        "message": "Transaksi berhasil dicatat",
+        "redirect": "/kasir/"
+    })

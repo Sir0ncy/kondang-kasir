@@ -87,9 +87,15 @@
       </table>
 
       <div class="d-flex justify-content-end">
-        <h4>Total: Rp.  <span id="totalHarga">0</span></h4>
+        <h4>Total: Rp. <span id="totalHarga">0</span></h4>
       </div>
+    <div class="d-flex justify-content-end mt-4">
+      <button class="btn btn-success btn-lg" onclick="checkoutNow()">
+        <i class="bi bi-cash-stack"></i> Checkout
+      </button>
     </div>
+    </div>
+
 
     <script>
       const PRODUCTS = [
@@ -225,6 +231,32 @@
       function removeItem(id) {
         delete cart[id];
         renderCart();
+      }
+    </script>
+    <script>
+      function checkoutNow() {
+        if (Object.keys(cart).length === 0) {
+          alert("Keranjang kosong!");
+          return;
+        }
+
+        fetch("{% url 'checkout' %}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}",
+          },
+          body: JSON.stringify({ cart: cart }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.status === "success") {
+              alert("Transaksi berhasil!");
+              window.location.href = data.redirect;
+            } else {
+              alert("Error: " + data.message);
+            }
+          });
       }
     </script>
   </body>
