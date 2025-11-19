@@ -10,7 +10,10 @@ class Barang(models.Model):
 
     def __str__(self):
         return self.nama_barang
-    
+
+    class Meta:
+        db_table = 'barang'
+
 class Transaksi(models.Model):
     tanggal_transaksi = models.DateTimeField(auto_now_add=True)
     total_harga = models.DecimalField(max_digits=12, decimal_places=2)
@@ -18,6 +21,8 @@ class Transaksi(models.Model):
     def __str__(self):
         return f"Transaksi #{self.id} - {self.tanggal_transaksi.strftime('%Y-%m-%d')}"
 
+    class Meta:
+        db_table = 'transaksi'
 
 class DetailTransaksi(models.Model):
     transaksi = models.ForeignKey(Transaksi, on_delete=models.CASCADE, related_name='detail')
@@ -28,3 +33,6 @@ class DetailTransaksi(models.Model):
 
     def __str__(self):
         return f"{self.barang.nama_barang} x {self.qty}"
+
+    class Meta:
+        db_table = 'detail_transaksi'

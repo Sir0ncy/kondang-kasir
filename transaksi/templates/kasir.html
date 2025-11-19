@@ -1,0 +1,231 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Kondang Kasir</title>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
+    />
+
+    <style>
+      /* AUTOCOMPLETE STYLE */
+      #autocompleteList {
+        position: absolute;
+        width: 100%;
+        background: white;
+        border: 1px solid #ccc;
+        border-top: none;
+        max-height: 220px;
+        overflow-y: auto;
+        z-index: 9999;
+        display: none;
+      }
+      .autocomplete-item {
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+      .autocomplete-item:hover {
+        background: #e7f1ff;
+      }
+    </style>
+  </head>
+
+  <body class="bg-light">
+    <!-- NAVBAR -->
+    <nav class="shadow-sm py-3" style="background: #2563eb">
+      <div class="container d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <div
+            class="bg-white rounded-circle d-flex align-items-center justify-content-center"
+            style="width: 38px; height: 38px"
+          >
+            <i class="bi bi-cart4 text-primary fs-5"></i>
+          </div>
+          <h4 class="text-white fw-bold m-0">Kondang Kasir</h4>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <span class="me-3 text-white">Halo, {{ request.user.username }}</span>
+          <a href="/dashboard/" class="btn btn-light btn-sm shadow-sm px-3">
+            <i class="bi bi-arrow-left"></i> dashboard
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container py-4">
+      <div class="position-relative mb-4">
+        <input
+          type="text"
+          id="searchInput"
+          class="form-control form-control-lg"
+          placeholder="Cari produk..."
+        />
+
+        <div id="autocompleteList"></div>
+      </div>
+
+      <h5 class="fw-bold">Keranjang Belanja</h5>
+      <table class="table table-bordered mt-3">
+        <thead class="table-light">
+          <tr>
+            <th>Produk</th>
+            <th>Satuan</th>
+            <th>Qty</th>
+            <th>Subtotal</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="cartBody"></tbody>
+      </table>
+
+      <div class="d-flex justify-content-end">
+        <h4>Total: Rp.  <span id="totalHarga">0</span></h4>
+      </div>
+    </div>
+
+    <script>
+      const PRODUCTS = [
+          {% for p in products %}
+          {
+              id: {{ p.id }},
+              name: "{{ p.nama_barang }}",
+              price: {{ p.harga_per_unit }},
+              satuan: "{{ p.satuan }}",
+              bulkSize: {{ p.bulk_size }},
+              bulkDiscount: {{ p.bulk_discount_rate }}
+          },
+          {% endfor %}
+      ];
+
+      const searchInput = document.getElementById("searchInput");
+      const autocompleteList = document.getElementById("autocompleteList");
+
+      searchInput.addEventListener("input", function() {
+          const keyword = this.value.toLowerCase();
+
+          if (keyword.length === 0) {
+              autocompleteList.style.display = "none";
+              return;
+          }
+
+          const results = PRODUCTS.filter(p =>
+              p.name.toLowerCase().includes(keyword)
+          );
+
+          autocompleteList.innerHTML = "";
+          results.forEach(p => {
+              const div = document.createElement("div");
+              div.classList.add("autocomplete-item");
+              div.innerHTML = `<strong>${p.name}</strong> — ${p.price.toLocaleString()}/${p.satuan}`;
+
+              div.onclick = () => {
+                  addToCart(
+                      p.id,
+                      p.name,
+                      p.price,
+                      p.satuan,
+                      p.bulkSize,
+                      p.bulkDiscount
+                  );
+                  autocompleteList.style.display = "none";
+                  searchInput.value = "";
+              };
+
+              autocompleteList.appendChild(div);
+          });
+
+          autocompleteList.style.display = "block";
+      });
+    </script>
+
+    <script>
+      let cart = {};
+
+      function addToCart(
+        id,
+        name,
+        harga,
+        satuan,
+        bulkSize,
+        bulkDiscountPercent
+      ) {
+        if (!cart[id]) {
+          cart[id] = {
+            name,
+            harga,
+            satuan,
+            qty: 1,
+            bulkSize,
+            bulkDiscountPercent,
+          };
+        } else {
+          cart[id].qty++;
+        }
+        renderCart();
+      }
+
+      function calculateSubtotal(item) {
+        const qty = item.qty;
+
+        const bulkGroups = Math.floor(qty / item.bulkSize);
+        const discountedBulkPrice =
+          item.harga * item.bulkSize * (1 - item.bulkDiscountPercent / 100);
+
+        const remainder = qty % item.bulkSize;
+        return bulkGroups * discountedBulkPrice + remainder * item.harga;
+      }
+
+      function renderCart() {
+        const tbody = document.getElementById("cartBody");
+        tbody.innerHTML = "";
+
+        let total = 0;
+
+        for (let id in cart) {
+          let item = cart[id];
+          let subtotal = calculateSubtotal(item);
+          total += subtotal;
+
+          tbody.innerHTML += `
+                <tr>
+                  <td>${item.name}</td>
+                  <td>${item.satuan}</td>
+                  <td>
+                    <input type="number" value="${item.qty}" min="1"
+                        class="form-control form-control-sm"
+                        onchange="updateQty(${id}, this.value)">
+                  </td>
+                  <td>${subtotal.toLocaleString()}</td>
+                  <td>
+                    <button class="btn btn-danger btn-sm" onclick="removeItem(${id})">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+            `;
+        }
+
+        document.getElementById("totalHarga").textContent =
+          total.toLocaleString();
+      }
+
+      function updateQty(id, qty) {
+        cart[id].qty = parseInt(qty);
+        renderCart();
+      }
+
+      function removeItem(id) {
+        delete cart[id];
+        renderCart();
+      }
+    </script>
+  </body>
+</html>
